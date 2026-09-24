@@ -1,3 +1,11 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Wie werden Merkmale weitergegeben?</title>
+
 <style>
 * {
     box-sizing: border-box;
@@ -603,3 +611,774 @@ and (orientation: portrait) {
     }
 }
 </style>
+</head>
+
+<body>
+
+<div class="app">
+
+    <div class="hero">
+
+        <div class="topline">
+            Biologie · Übung
+        </div>
+
+        <h1>Wie werden Merkmale weitergegeben?</h1>
+
+        <p class="subtitle">
+            Auch dein Gehirn braucht Training –
+            mit jeder Übung wirst du stärker!
+        </p>
+
+        <div class="info-row">
+
+            <div class="points">
+                <span class="points-label">Punkte</span>
+                <span class="points-number">
+                    <span id="score">0</span> / 7
+                </span>
+            </div>
+
+            <div class="progress-area">
+
+                <div class="progress-text" id="progressText">
+                    Aufgabe 1 von 7
+                </div>
+
+                <div class="progress-bg">
+                    <div class="progress" id="progress"></div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+
+    <div class="card" id="card"></div>
+
+
+    <div class="navigation">
+
+        <button class="navbutton restart" id="restart">
+            ↻ Neu starten
+        </button>
+
+        <button class="navbutton next" id="next" disabled>
+            Weiter →
+        </button>
+
+    </div>
+
+</div>
+
+
+<script>
+
+const questions = [
+
+{
+    type:"choice",
+    category:"Grundwissen",
+    question:"Was ist ein Gen?",
+
+    answers:[
+        "Ein Abschnitt der Erbsubstanz",
+        "Eine ganze Zelle",
+        "Ein sichtbares Merkmal",
+        "Eine Keimzelle"
+    ],
+
+    correct:0,
+
+    explanation:
+    "Ein Gen ist ein Abschnitt der Erbsubstanz."
+},
+
+
+{
+    type:"fill",
+    category:"Erbinformation",
+    question:"Vervollständige den Merksatz.",
+
+    explanation:
+    "Gene enthalten die Erbinformation für bestimmte Merkmale."
+},
+
+
+{
+    type:"choice",
+    category:"Weitergabe der Erbinformation",
+    question:"Welcher Vorgang findet zuerst statt?",
+
+    answers:[
+        "Befruchtung",
+        "Bestäubung",
+        "Aussaat",
+        "Neukombination"
+    ],
+
+    correct:1,
+
+    explanation:
+    "Zuerst erfolgt die Bestäubung. Danach kann es zur Befruchtung kommen."
+},
+
+
+{
+    type:"choice",
+    category:"Befruchtung",
+    question:"Was passiert bei der Befruchtung?",
+
+    answers:[
+        "Zwei Blüten verschmelzen.",
+        "Männliche und weibliche Keimzelle verschmelzen.",
+        "Zwei Erbsen werden miteinander vermischt.",
+        "Die Erbinformation geht verloren."
+    ],
+
+    correct:1,
+
+    explanation:
+    "Bei der Befruchtung verschmelzen männliche und weibliche Keimzelle."
+},
+
+
+{
+    type:"sort",
+    category:"Ablauf",
+    question:"Bringe die Vorgänge in die richtige Reihenfolge.",
+
+    explanation:
+    "Bestäubung → Befruchtung → neue Merkmalskombinationen → Aussaat"
+},
+
+
+{
+    type:"choice",
+    category:"Denkaufgabe",
+    question:
+    "Warum können die Nachkommen neue Merkmalskombinationen besitzen?",
+
+    answers:[
+        "Weil bei der Befruchtung die Erbinformationen beider Eltern neu kombiniert werden.",
+        "Weil sich die Merkmale bei der Aussaat zufällig verändern.",
+        "Weil nur ein Elternteil seine Erbinformation weitergibt.",
+        "Weil bei der Bestäubung neue Gene entstehen."
+    ],
+
+    correct:0,
+
+    explanation:
+    "Bei der Befruchtung werden die Erbinformationen beider Eltern neu kombiniert. Dadurch können neue Merkmalskombinationen entstehen."
+},
+
+
+{
+    type:"choice",
+    category:"Zum Schluss",
+    question:
+    "Warum können sich Nachkommen von ihren Eltern unterscheiden?",
+
+    answers:[
+        "Weil alle Nachkommen genau dieselbe Erbinformation erhalten.",
+        "Weil die Erbinformationen beider Eltern neu kombiniert werden.",
+        "Weil nur die Umwelt die Merkmale bestimmt.",
+        "Weil bei jeder Aussaat automatisch neue Gene entstehen."
+    ],
+
+    correct:1,
+
+    explanation:
+    "Durch die Neukombination der Erbinformationen beider Eltern können neue Merkmalskombinationen entstehen."
+}
+
+];
+
+
+let current = 0;
+let score = 0;
+let answered = false;
+
+
+const card =
+document.getElementById("card");
+
+const scoreElement =
+document.getElementById("score");
+
+const progress =
+document.getElementById("progress");
+
+const progressText =
+document.getElementById("progressText");
+
+const next =
+document.getElementById("next");
+
+const restart =
+document.getElementById("restart");
+
+
+function updateProgress(){
+
+    progressText.textContent =
+    "Aufgabe " + (current + 1) + " von 7";
+
+    progress.style.width =
+    ((current + 1) / 7 * 100) + "%";
+}
+
+
+function questionHeader(q){
+
+    return `
+        <span class="badge">
+            AUFGABE ${current + 1} · ${q.category}
+        </span>
+
+        <h2 class="question">
+            ${q.question}
+        </h2>
+    `;
+}
+
+
+function renderQuestion(){
+
+    answered = false;
+    next.disabled = true;
+
+    updateProgress();
+
+    const q = questions[current];
+
+
+    /* MULTIPLE CHOICE */
+
+    if(q.type === "choice"){
+
+        let html = questionHeader(q);
+
+        html += `<div class="answers">`;
+
+        q.answers.forEach((answer,index)=>{
+
+            html += `
+
+            <button class="answer"
+                    data-index="${index}">
+
+                <span class="answer-letter">
+                    ${String.fromCharCode(65 + index)}
+                </span>
+
+                <span>${answer}</span>
+
+            </button>
+
+            `;
+
+        });
+
+        html += `</div>
+                 <div class="feedback" id="feedback"></div>`;
+
+        card.innerHTML = html;
+
+
+        document
+        .querySelectorAll(".answer")
+        .forEach(button=>{
+
+            button.addEventListener("click",()=>{
+
+                if(answered) return;
+
+                const selected =
+                Number(button.dataset.index);
+
+                const correct =
+                selected === q.correct;
+
+
+                document
+                .querySelectorAll(".answer")
+                .forEach(b=>b.disabled=true);
+
+
+                if(correct){
+
+                    button.classList.add("correct");
+
+                    score++;
+                    scoreElement.textContent = score;
+
+                } else {
+
+                    button.classList.add("wrong");
+
+                    document
+                    .querySelectorAll(".answer")
+                    [q.correct]
+                    .classList.add("correct");
+
+                }
+
+
+                showFeedback(
+                    correct,
+                    q.explanation
+                );
+
+            });
+
+        });
+
+    }
+
+
+    /* LÜCKENTEXT */
+
+    if(q.type === "fill"){
+
+        card.innerHTML =
+
+        questionHeader(q) +
+
+        `
+
+        <div class="fillbox">
+
+            Gene enthalten die
+
+            <input
+                id="fillInput"
+                placeholder="Begriff eingeben">
+
+            für bestimmte Merkmale.
+
+        </div>
+
+        <div class="button-row">
+
+            <button
+                class="action"
+                id="checkFill">
+
+                Überprüfen
+
+            </button>
+
+        </div>
+
+        <div
+            class="feedback"
+            id="feedback">
+        </div>
+
+        `;
+
+
+        document
+        .getElementById("checkFill")
+        .addEventListener("click",()=>{
+
+            if(answered) return;
+
+
+            const value =
+            document
+            .getElementById("fillInput")
+            .value
+            .trim()
+            .toLowerCase();
+
+
+            if(value === ""){
+
+                document
+                .getElementById("feedback")
+                .innerHTML =
+                "<p>Trage zuerst einen Begriff ein.</p>";
+
+                return;
+            }
+
+
+            const correct =
+            value === "erbinformation" ||
+            value === "erbinformationen";
+
+
+            if(correct){
+
+                score++;
+                scoreElement.textContent = score;
+
+            }
+
+
+            showFeedback(
+                correct,
+                q.explanation
+            );
+
+        });
+
+    }
+
+
+    /* REIHENFOLGE */
+
+    if(q.type === "sort"){
+
+        const words = [
+
+            "Aussaat",
+
+            "Befruchtung",
+
+            "Neue Merkmalskombinationen",
+
+            "Bestäubung"
+
+        ];
+
+
+        card.innerHTML =
+
+        questionHeader(q) +
+
+        `
+
+        <p class="instruction">
+            Tippe die Begriffe nacheinander
+            in der richtigen Reihenfolge an.
+        </p>
+
+        <div
+            class="word-pool"
+            id="wordPool">
+
+            ${words.map(word=>
+
+                `<button class="word">
+                    ${word}
+                </button>`
+
+            ).join("")}
+
+        </div>
+
+
+        <div class="sequence-box">
+
+            <div class="sequence-title">
+                Deine Reihenfolge
+            </div>
+
+            <div
+                class="sequence"
+                id="sequence">
+
+                Noch nichts ausgewählt
+
+            </div>
+
+        </div>
+
+
+        <div class="button-row">
+
+            <button
+                class="action"
+                id="checkOrder">
+
+                Überprüfen
+
+            </button>
+
+            <button
+                class="action secondary"
+                id="clearOrder">
+
+                Zurücksetzen
+
+            </button>
+
+        </div>
+
+        <div
+            class="feedback"
+            id="feedback">
+        </div>
+
+        `;
+
+
+        let selected = [];
+
+
+        const sequence =
+        document.getElementById("sequence");
+
+
+        document
+        .querySelectorAll(".word")
+        .forEach(button=>{
+
+            button.addEventListener("click",()=>{
+
+                if(answered ||
+                   button.classList.contains("used"))
+                   return;
+
+
+                selected.push(
+                    button.textContent.trim()
+                );
+
+
+                button.classList.add("used");
+
+
+                sequence.textContent =
+                selected.join("  →  ");
+
+            });
+
+        });
+
+
+        document
+        .getElementById("clearOrder")
+        .addEventListener("click",()=>{
+
+            if(answered) return;
+
+            selected = [];
+
+            sequence.textContent =
+            "Noch nichts ausgewählt";
+
+
+            document
+            .querySelectorAll(".word")
+            .forEach(button=>
+                button.classList.remove("used")
+            );
+
+        });
+
+
+        document
+        .getElementById("checkOrder")
+        .addEventListener("click",()=>{
+
+            if(answered) return;
+
+
+            if(selected.length !== 4){
+
+                document
+                .getElementById("feedback")
+                .innerHTML =
+                "<p>Wähle zuerst alle vier Schritte aus.</p>";
+
+                return;
+
+            }
+
+
+            const correctOrder = [
+
+                "Bestäubung",
+
+                "Befruchtung",
+
+                "Neue Merkmalskombinationen",
+
+                "Aussaat"
+
+            ];
+
+
+            const correct =
+            selected.every(
+                (word,index)=>
+                word === correctOrder[index]
+            );
+
+
+            if(correct){
+
+                score++;
+                scoreElement.textContent = score;
+
+            }
+
+
+            showFeedback(
+                correct,
+                q.explanation
+            );
+
+        });
+
+    }
+
+}
+
+
+function showFeedback(correct,text){
+
+    answered = true;
+
+    next.disabled = false;
+
+
+    const feedback =
+    document.getElementById("feedback");
+
+
+    feedback.innerHTML = `
+
+        <div class="
+            feedback-box
+            ${correct
+            ? "feedback-correct"
+            : "feedback-wrong"}">
+
+            <div class="feedback-title">
+
+                ${correct
+                ? "✓ Richtig!"
+                : "Noch nicht ganz."}
+
+            </div>
+
+            ${text}
+
+        </div>
+
+    `;
+
+}
+
+
+next.addEventListener("click",()=>{
+
+    if(!answered) return;
+
+
+    current++;
+
+
+    if(current < questions.length){
+
+        renderQuestion();
+
+    } else {
+
+        showResult();
+
+    }
+
+});
+
+
+function showResult(){
+
+    progress.style.width = "100%";
+
+    progressText.textContent =
+    "Geschafft!";
+
+    next.disabled = true;
+
+
+    let message;
+
+
+    if(score === 7){
+
+        message =
+        "Klasse! Du hast alle Aufgaben richtig gelöst.";
+
+    } else if(score >= 5){
+
+        message =
+        "Sehr gut! Die wichtigsten Zusammenhänge hast du verstanden.";
+
+    } else {
+
+        message =
+        "Schau dir die Merksätze noch einmal an und starte danach eine neue Runde.";
+
+    }
+
+
+    card.innerHTML = `
+
+        <div class="finish">
+
+            <div class="finish-circle">
+                ✓
+            </div>
+
+            <h2>
+                Training geschafft!
+            </h2>
+
+            <div class="final-score">
+                ${score} / 7
+            </div>
+
+            <p>
+                ${message}
+            </p>
+
+
+            <div class="merksatz">
+
+                <div class="merksatz-label">
+                    DAS SOLLTEST DU DIR MERKEN
+                </div>
+
+                Bei der Befruchtung werden die
+                <strong>Erbinformationen beider Eltern</strong>
+                neu kombiniert.
+
+                Dadurch können
+                <strong>neue Merkmalskombinationen</strong>
+                entstehen.
+
+            </div>
+
+        </div>
+
+    `;
+
+}
+
+
+restart.addEventListener("click",()=>{
+
+    current = 0;
+    score = 0;
+    answered = false;
+
+    scoreElement.textContent = "0";
+
+    renderQuestion();
+
+});
+
+
+renderQuestion();
+
+</script>
+
+</body>
+</html>
